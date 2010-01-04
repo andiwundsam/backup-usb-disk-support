@@ -1,0 +1,6 @@
+#!/bin/bash
+. /etc/ext-backup/ext-backup.conf
+
+
+umount ${dst_mountpoint}
+cryptsetup luksClose ${crypt_name}

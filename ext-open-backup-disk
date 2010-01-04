@@ -1,0 +1,8 @@
+#!/bin/bash
+. /etc/ext-backup/ext-backup.conf
+
+mkdir -p "${dst_mountpoint}"
+
+#dd if=/dev/urandom of=$target bs=1M
+cryptsetup luksOpen --key-file /ext-backup/key ${dst_disk} ${crypt_name}
+mount ${crypt_dev} ${dst_mountpoint}
