@@ -1,0 +1,7 @@
+key_file="/ext-backup/key"
+cipher_spec="-c aes-cbc-essiv:sha256 -s 256"
+dst_disk="/dev/sdc"
+dst_mountpoint="/ext-backup/disk"
+crypt_name="extdisk-crypt"
+crypt_dev="/dev/mapper/${crypt_name}"
+
