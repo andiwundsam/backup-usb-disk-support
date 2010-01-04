@@ -1,8 +1,101 @@
 #!/bin/bash
 . /etc/ext-backup/ext-backup.conf
 
-mkdir -p "${dst_mountpoint}"
+force_host=""
+dst_disk=""
+skip_random=0
 
-#dd if=/dev/urandom of=$target bs=1M
-cryptsetup luksOpen --key-file /ext-backup/key ${dst_disk} ${crypt_name}
-mount ${crypt_dev} ${dst_mountpoint}
+args=$(getopt --longoptions "force:,skip-random-pass" -o "f:s" -- "$@")
+eval set -- $args
+while [ $# -gt 0 ]; do
+        parm="$1"
+        shift
+        case $parm in
+                --force|-f)
+                        force_host="$1"
+                        shift
+                        ;;
+                --skip-random-pass|-s)
+                        skip_random=1
+                        ;;
+               --)
+                        break
+                        ;;
+                *)
+                        echo "Unknown option: $parm"
+                        show_help=1
+                        ;;
+        esac
+done
+
+if [ $# -eq 0 ]; then
+	cat >&2 <<END
+
+  $0 - intialisiert externe Festplatte für das teleteach-Offsite-Backup
+
+  Call syntax: $0 [--force=<hostname>] [OPTIONS] <dst_disk>
+
+  OPTIONS:
+	--skip-random-pass|s 		Ueberspringt das initiale Ueberschreiben der Platte mit Zufallsdaten
+	--force=<hostname>		Ueberspring die Sicherheitsabfrage
+
+END
+	exit 1
+fi
+
+dst_disk="$1"
+
+for i in $dst_mountpoint $dst_disk $crypt_dev; do
+	if fgrep -q $i /proc/mounts;  then
+		echo "Error: $i already mounted" >&2
+		exit 1
+	fi
+done
+
+if [ -e $crypt_dev ] ; then
+	echo "Error: $crypt_dev exists - crypt seems to be running" >&2
+	exit 1
+fi
+
+
+if [ "$force_host" != $(hostname) ]; then
+	cat >&2 <<END
+
+$0 - intialisiert externe Festplatte für das teleteach-Offsite-Backup
+
+ACHTUNG: DIE FESTPLATTE AUF $dst_disk WIRD KOMPLETT UND UNWIEDERBRINGLICH 
+UEBERSCHRIEBEN.
+
+fdisk info:
+----------
+$(fdisk -l $dst_disk)
+----------
+
+(Diese Abfrage kann mit durch den Parameter --force=<hostname> uebersprungen werden.
+
+fortfahren? (ja/nein)
+	
+END
+	read confirm
+	if [ "$confirm" != "ja" ]; then
+		echo "abgebrochen" >&2
+		exit 2
+	fi
+	
+fi
+
+set -e
+mkdir -p "${dst_mountpoint}"
+if [ $skip_random -eq 0 ] ; then
+	echo "Ueberschreibe $dst_disk mit Zufallsdaten. Das kann einige (viele) Stunden dauern..."
+	dd if=/dev/urandom of=${dst_disk} bs=1M
+fi
+
+echo "Lege verschluesselte LUKS-Partition an..."
+cryptsetup luksFormat ${cipher_spec} ${dst_disk} ${key_file}
+echo "Lege Dateisystem an..."
+cryptsetup luksOpen --key-file ${key_file} ${dst_disk} ${crypt_name}
+mkfs.ext3 ${crypt_dev}
+cryptsetup luksClose ${crypt_name}
+
+echo "OK"
