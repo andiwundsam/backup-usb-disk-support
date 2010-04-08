@@ -1,0 +1,4 @@
+#!/bin/bash
+. /etc/ext-backup/ext-backup.conf
+
+smartctl -d sat ${dst_dsk} -i -T permissive | grep "^Serial Number" | awk -F ' ' '{ print $3 }'
