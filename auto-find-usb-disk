@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for i in b c d e f g h i j k l; do
+	dev="/dev/sd$i"
+	udevinfo -a -n "$dev" 2>/dev/null  | grep -q usb-storage
+	res=$?
+	if [ $res -eq 0 ]; then
+		echo "$dev"
+		exit 0
+	fi
+done
+echo "No USB disk found" >&2
+exit 2
