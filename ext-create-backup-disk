@@ -92,9 +92,9 @@ if [ $skip_random -eq 0 ] ; then
 fi
 
 echo "Lege verschluesselte LUKS-Partition an..."
-cryptsetup luksFormat ${cipher_spec} ${dst_disk} ${key_file}
+cryptsetup luksFormat ${cipher_spec} ${dst_disk} <${key_file}
 echo "Lege Dateisystem an..."
-cryptsetup luksOpen --key-file ${key_file} ${dst_disk} ${crypt_name}
+cryptsetup luksOpen ${dst_disk} ${crypt_name} <${key_file}
 mkfs.ext3 ${crypt_dev}
 cryptsetup luksClose ${crypt_name}
 

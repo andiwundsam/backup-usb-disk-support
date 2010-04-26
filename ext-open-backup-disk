@@ -4,5 +4,5 @@
 mkdir -p "${dst_mountpoint}"
 
 set -e
-cryptsetup luksOpen --key-file ${key_file} ${dst_disk} ${crypt_name}
+cryptsetup luksOpen ${dst_disk} ${crypt_name} <${key_file}
 mount ${crypt_dev} ${dst_mountpoint}
