@@ -1,0 +1,120 @@
+#!/bin/bash
+mydir=$(dirname $(readlink -f "$0") )
+. $mydir/ext-backup-functions
+load_config
+
+force_host=""
+skip_random=0
+create_opts=""
+
+args=$(getopt --longoptions "force:,skip-random-pass" -o "f:s" -- "$@")
+eval set -- $args
+while [ $# -gt 0 ]; do
+        parm="$1"
+        shift
+        case $parm in
+                --force|-f)
+                        force_host="$1"
+			create_opts="$create_opts --force"
+                        shift
+                        ;;
+                --skip-random-pass|-s)
+                        skip_random=1
+			create_opts="$create_opts --skip-random-pass"
+                        ;;
+               --)
+                        break
+                        ;;
+                *)
+                        echo "Unknown option: $parm"
+                        show_help=1
+                        ;;
+        esac
+done
+
+if [ $# -eq 0 ]; then
+	cat >&2 <<END
+
+	$0 - findet, überprüft, reinitialisiert USB-Platte per SN
+
+  Call syntax: $0 [--force=<hostname>] [OPTIONS] <Seriennummer>
+
+  OPTIONS:
+	--skip-random-pass|s 		Ueberspringt das initiale Ueberschreiben der Platte mit Zufallsdaten
+	--force=<hostname>		Ueberspring die Sicherheitsabfrage
+
+END
+	exit 1
+fi
+
+set -e
+
+dst_sn="$1"
+current_sn=$(ext-get-current-sn)
+
+if [ ! "$dst_disk" ] ; then
+	echo "ERROR: Could not find dst disk node"
+	exit 101
+fi
+
+if [ "$dst_sn" != "$current_sn" ]; then
+	echo "Error: Current SN: ${current_sn} is not expected SN: $dst_sn" >&2 
+	exit "Abort." >&2
+	exit 255
+fi
+
+check_stamp=$(load_check_stamp check "2010-01-01 00:00:00")
+init_stamp=$(load_check_stamp init "$(time_now)")
+
+needs_init=0
+needs_check=0
+
+# correct sn disk inserted
+if ! cryptsetup isLuks $dst_disk; then
+	echo "Warn: no luks signature found on disk -- needs initialization" >&2
+	needs_init=1
+else
+	# luks found
+
+	if check-age +$reinit_age "$init_stamp"; then
+		# older than reinit_age
+		needs_init=1
+	elif check-age +$check_age "$check_stamp"; then
+		needs_check=1
+	fi
+fi
+
+if [ "$needs_init" -gt 0 ]; then
+	if [ "$auto_init" -eq 0 ]; then
+		echo "ERROR: Disks $current_sn in $dsk_disk needs intitialization, but auto_init is off" >&2
+		exit 3
+	fi
+
+	echo "Automatically reinitializing disk $current_sn in $dst_disk"
+	ext-create-backup-disk $create_opts ${dst_disk}
+elif [ "$needs_check" -gt 0 ]; then
+	echo "Automatically checking backup disk $current_sn in $dst_disk"
+
+	ext-check-backup-disk
+	ext-open-backup-disk --skip-mount
+	rv=$?
+	if [ $rv -gt 0 ]; then
+		echo "ERROR could not open luks backup disk -- check manually" >&2
+		exit 100
+	fi
+
+	fsck -n $crypt_dev
+	rv=$?
+	if [ $rv -gt 0 ]; then
+		echo "ERROR on fsck of disk $current_sn ($dst_disk): error $rv -- check manually" >&2
+		exit 101
+	fi
+
+	write_stamp $check
+	ext-close-backup-disk
+	rv=$?
+	if [ $rv -gt 0 ]; then
+		echo "ERROR could not close luks backup disk -- check manually" >&2
+		exit 100
+	fi
+fi

@@ -3,8 +3,35 @@ mydir=$(dirname $(readlink -f "$0") )
 . $mydir/ext-backup-functions
 load_config
 
+skip_mount=0
+
+args=$(getopt --longoptions "skip-mount" -o "s" -- "$@")
+eval set -- $args
+while [ $# -gt 0 ]; do
+        parm="$1"
+        shift
+        case $parm in
+               --skip-mount|-s)
+			skip_mount="1"
+                        ;;
+               --)
+                        break
+                        ;;
+                *)
+                        echo "Unknown option: $parm"
+                        show_help=1
+                        ;;
+        esac
+done
+
+
 mkdir -p "${dst_mountpoint}"
 
 set -e
 cryptsetup luksOpen ${dst_disk} ${crypt_name} <${key_file}
-mount ${crypt_dev} ${dst_mountpoint}
+
+if [ $skip_mount -eq 1 ]; then
+	echo "Skippping mount as requested"
+else
+	mount ${crypt_dev} ${dst_mountpoint}
+fi

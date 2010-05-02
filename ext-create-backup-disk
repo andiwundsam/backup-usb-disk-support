@@ -101,4 +101,6 @@ cryptsetup luksOpen ${dst_disk} ${crypt_name} <${key_file}
 mkfs.ext3 ${crypt_dev}
 cryptsetup luksClose ${crypt_name}
 
+write_stamp "init"
+
 echo "OK"

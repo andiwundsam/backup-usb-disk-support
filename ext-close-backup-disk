@@ -3,6 +3,9 @@ mydir=$(dirname $(readlink -f "$0") )
 . $mydir/ext-backup-functions
 load_config
 
-
-umount ${dst_mountpoint}
+if cat /proc/mounts | cut -f 2 -d ' ' | fgrep -xq "$dst_mountpoint"; then
+	umount ${dst_mountpoint}
+else
+	echo "$dst_mountpoint not mounted"
+fi
 cryptsetup luksClose ${crypt_name}

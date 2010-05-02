@@ -11,3 +11,59 @@ load_config() {
 		fi
 	fi
 }
+
+time_now() {
+	date --rfc-3339=seconds
+}
+
+current_sn() {
+	if [ ! "$current_sn" ]; then
+		current_sn=$(ext-get-current-sn)
+	fi
+	echo "$current_sn"
+}
+
+sn_state_dir() {
+	if [ ! "$current_sn_state_dir" ]; then
+		current_sn_state_dir="$state_dir/$(current_sn)"
+		if [ ! -e $current_sn_state_dir ]; then
+			mkdir -p "$current_sn_state_dir"
+			if [ $? -gt 0 ]; then
+				exit 1
+			fi
+		fi
+	fi
+	echo "$current_sn_state_dir"
+}
+
+stamp_file() {
+	local name="$1"
+	echo $(sn_state_dir)/$name.stamp
+}
+
+load_check_stamp() {
+	local name="$1"
+	local def_stamp="$2"
+
+	local stamp_file=$(stamp_file $name)
+
+	if [ ! -e "$file" ]; then
+		check_stamp="$def_stamp"
+		echo "$check_stamp" > $stamp_file
+	else
+		check_stamp=$(cat $stamp_file)
+	fi
+	echo $check_stamp
+}
+
+write_stamp() {
+	local name="$1"
+	local stamp="$2"
+
+	if [ ! "$stamp" ]; then
+		stamp="$(time_now)"
+	fi
+
+	local stamp_file=$(stamp_file $name)
+	echo "$stamp" > $stamp_file
+}

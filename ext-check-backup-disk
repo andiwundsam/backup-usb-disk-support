@@ -1,0 +1,36 @@
+#!/bin/bash
+mydir=$(dirname $(readlink -f "$0") )
+. $mydir/ext-backup-functions
+load_config
+
+ext-open-backup-disk --skip-mount
+rv=$?
+if [ $rv -gt 0 ]; then
+	echo "ERROR could not open luks backup disk -- check manually" >&2
+	exit 100
+fi
+trap "ext-close-backup-disk" SIGQUIT SIGINT SIGTERM ERR EXIT
+
+
+fsck.ext3 -f -n $crypt_dev
+rv=$?
+if [ $rv -gt 0 ]; then
+	echo "ERROR on fsck of disk $current_sn ($dst_disk): error $rv -- check manually" >&2
+	exit 101
+fi
+
+write_stamp "check"
+rv=$?
+if [ $rv -gt 0 ]; then
+	echo "ERROR updating write_stamp: $rv" >&2
+	exit 102
+fi
+
+
+ext-close-backup-disk
+rv=$?
+if [ $rv -gt 0 ]; then
+	echo "ERROR could not close luks backup disk -- check manually" >&2
+	exit 103
+fi
+

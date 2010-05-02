@@ -1,0 +1,68 @@
+#!/usr/bin/ruby -w
+require 'time'
+
+QUANTIFIERS = [["s", 60], ["m", 60], ["h", 24], ["d", 365], ["y",9999999]]
+QUANT_TABLE = {}
+begin
+    factor = 1
+    QUANTIFIERS.each do |sym, next_fact|
+        QUANT_TABLE[sym] = factor
+        factor *= next_fact
+    end
+end
+
+
+# Format a time interval for human readibility
+# (surprised I din't find it in the std lib)
+def format_interval(sec)
+    time = sec.to_i
+    res=[]
+    for (mark, lim) in QUANTIFIERS
+        res.unshift "#{time % lim}#{mark}"
+        if time < lim
+            break
+        else
+            time = time / lim
+        end
+    end
+    return res.join("")
+end
+
+def parse_interval(int)
+    res = 0
+    int.scan(/\s*(\d+)\s*(s|m|h|d|y)?,?\s*/i).each do |token|
+        (num, sym) = token
+        factor = QUANT_TABLE[sym.downcase]
+        raise "Unknown quantifier: #{quant}" if factor.nil?
+        res += num.to_i * factor
+    end
+    return res
+end
+
+if ARGV.length < 2 
+	STDERR.puts "call syntax: #{$0} <age> <stamp"
+	exit 100
+end
+
+(limit_str, stamp_str) = ARGV
+
+if limit_str[0,1] == "-"
+	younger = true
+	limit_str = limit_str[1..-1]
+elsif limit_str[0,1] == "+"
+	younger = false	
+	limit_str = limit_str[1..-1]
+else
+	younger = false
+end
+
+limit = parse_interval limit_str
+stamp = Time.parse(stamp_str)
+now = Time.now
+age= now - stamp
+
+if younger
+	exit age < limit ? 0 : 1
+else
+	exit age > limit ? 0 : 1
+end
