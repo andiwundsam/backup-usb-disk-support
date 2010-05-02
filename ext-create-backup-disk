@@ -90,7 +90,8 @@ set -e
 mkdir -p "${dst_mountpoint}"
 if [ $skip_random -eq 0 ] ; then
 	echo "Ueberschreibe $dst_disk mit Zufallsdaten. Das kann einige (viele) Stunden dauern..."
-	dd if=/dev/urandom of=${dst_disk} bs=1M
+	dd if=/dev/urandom of=${dst_disk} bs=1M || true
+	# error here is ok (out of space by dd)
 fi
 
 echo "Lege verschluesselte LUKS-Partition an..."
