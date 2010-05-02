@@ -1,0 +1,13 @@
+#!/bin/bash
+mydir=$(dirname $(readlink -f "$0") )
+export PATH="$PATH:$mydir"
+
+load_config() {
+	. /etc/ext-backup/ext-backup.conf
+	if [ "$dst_disk" == "auto" ]; then
+		dst_disk=$(auto-find-usb-disk)	
+		if [ $? -gt 0 ]; then
+			exit 1
+		fi
+	fi
+}

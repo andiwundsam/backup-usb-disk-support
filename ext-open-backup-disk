@@ -1,5 +1,7 @@
 #!/bin/bash
-. /etc/ext-backup/ext-backup.conf
+mydir=$(dirname $(readlink -f "$0") )
+. $mydir/ext-backup-functions
+load_config
 
 mkdir -p "${dst_mountpoint}"
 
