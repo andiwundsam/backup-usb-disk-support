@@ -91,7 +91,7 @@ if [ "$needs_init" -gt 0 ]; then
 	fi
 
 	echo "Automatically reinitializing disk $current_sn in $dst_disk"
-	ext-create-backup-disk $create_opts ${dst_disk}
+	ext-create-backup-disk --force=xwing $create_opts ${dst_disk}
 elif [ "$needs_check" -gt 0 ]; then
 	echo "Automatically checking backup disk $current_sn in $dst_disk"
 
