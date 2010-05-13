@@ -47,7 +47,7 @@ load_check_stamp() {
 
 	local stamp_file=$(stamp_file $name)
 
-	if [ ! -e "$file" ]; then
+	if [ ! -e "$stamp_file" ]; then
 		check_stamp="$def_stamp"
 		echo "$check_stamp" > $stamp_file
 	else
