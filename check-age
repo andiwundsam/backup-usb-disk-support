@@ -40,7 +40,7 @@ def parse_interval(int)
 end
 
 if ARGV.length < 2 
-	STDERR.puts "call syntax: #{$0} <age> <stamp"
+	STDERR.puts "call syntax: #{$0} <age> <stamp>"
 	exit 100
 end
 
@@ -60,6 +60,7 @@ limit = parse_interval limit_str
 stamp = Time.parse(stamp_str)
 now = Time.now
 age= now - stamp
+#puts "Limit: #{limit}, Stamp: #{stamp}, Age: #{age}"
 
 if younger
 	exit age < limit ? 0 : 1
