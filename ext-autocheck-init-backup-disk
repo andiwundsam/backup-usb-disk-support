@@ -96,25 +96,9 @@ elif [ "$needs_check" -gt 0 ]; then
 	echo "Automatically checking backup disk $current_sn in $dst_disk"
 
 	ext-check-backup-disk
-	ext-open-backup-disk --skip-mount
 	rv=$?
 	if [ $rv -gt 0 ]; then
-		echo "ERROR could not open luks backup disk -- check manually" >&2
-		exit 100
-	fi
-
-	fsck -n $crypt_dev
-	rv=$?
-	if [ $rv -gt 0 ]; then
-		echo "ERROR on fsck of disk $current_sn ($dst_disk): error $rv -- check manually" >&2
-		exit 101
-	fi
-
-	write_stamp $check
-	ext-close-backup-disk
-	rv=$?
-	if [ $rv -gt 0 ]; then
-		echo "ERROR could not close luks backup disk -- check manually" >&2
+		echo "ERROR could not check luks backup disk -- check manually" >&2
 		exit 100
 	fi
 fi
