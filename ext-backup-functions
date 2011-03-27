@@ -53,6 +53,7 @@ load_check_stamp() {
 	else
 		check_stamp=$(cat $stamp_file)
 	fi
+	echo "Timestamp $name: $check_stamp" >&2
 	echo $check_stamp
 }
 
