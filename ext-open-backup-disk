@@ -28,10 +28,19 @@ done
 mkdir -p "${dst_mountpoint}"
 
 set -e
-cryptsetup luksOpen ${dst_disk} ${crypt_name} <${key_file}
+if cryptsetup status ${crypt_name} >/dev/null 2>&1; then
+	echo "Cryptdisk already setup"
+else 
+	cryptsetup luksOpen ${dst_disk} ${crypt_name} <${key_file}
+fi
+	
+if cat /proc/mounts | cut -d ' ' -f 1 | grep -q ${crypt_dev}; then
+	umount $crypt_dev
+fi
 
 if [ $skip_mount -eq 1 ]; then
 	echo "Skippping mount as requested"
+
 else
 	mount ${crypt_dev} ${dst_mountpoint}
 fi
