@@ -1,8 +1,17 @@
 #!/bin/bash
 
+if which udevinfo >/dev/null 2>&1; then
+    info="udevinfo"
+elif which udevadm >/dev/null 2>&1; then
+    info="udevadm info"
+else
+    echo "neither udevinfo nor udevadm found" >&2
+    exit 1
+fi
+
 for i in b c d e f g h i j k l; do
 	dev="/dev/sd$i"
-	udevinfo -a -n "$dev" 2>/dev/null  | grep -q usb-storage
+	$info -a -n "$dev" 2>/dev/null  | grep -q usb-storage
 	res=$?
 	if [ $res -eq 0 ]; then
 		echo "$dev"
